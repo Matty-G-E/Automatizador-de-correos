@@ -1,49 +1,89 @@
-#smtplib es la libreria que te conecta con el servidor SMTP, que es el que se encarga de enviar correos
+
+#pandas: Es una biblioteca de Py que proporciona estructuras de datos y herramientas de analisis de datos faciles de usar y flexibles para el lenguaje de programacion
+import pandas as pd
+
+
+#smtplib: es una biblioteca estandar de Python que define una interfaz para enviar correos electronicos utilizando el Protocolo Simple de Transferencia de Correo (SMTP)
 import smtplib
 
-#Estas dos te ayudan a construir el cuerpo del correo MIME significa "Multipurpose Internet Mail Extensions", que sirve para que el correo tenga texto, HTML, archivos adj, etc
-from email.mime.text import MIMEText
+#tkinter: es una biblioteca estandar de Python para crear interfaces graficas de usuario (GUI)
+from tkinter import Tk
+
+#Askopenfilename: es una funcion del modulo filedialog que abre un cuadro de dialogo de "abrir archivo", para que el usuario pueda seleccionar un archivo
+from tkinter.filedialog import askopenfilename
+
+#MIMEMultipart: es una clase del modulo email.mime.multipart que permite crear mensajes de correo electronico con multiples partes (texto, imagenes, archivos adjuntos, etc.)
 from email.mime.multipart import MIMEMultipart
 
+#MIMEText: es una clase del modulo email.mime.text que permite crear partes de texto para los mensajes de correo electronico
+from email.mime.text import MIMEText
+
+#Ocultar ventana principal de Tkinter
+Tk().withdraw()
+
+#Abrir el explorador de archivos
+archivo_excel = askopenfilename(title="Selecciona el archivo Excel", filetypes=[("Excel files", "*.xlsx")])
+
+
+#Leer el archivo Excel
+df = pd.read_excel(archivo_excel)
+
+#Seleccionar las columnas deseadas para enviar en el correo
+columnas_deseadas = [
+    'RUT Proveedor.1',
+    'RUT Proveedor.2',
+    'Razon Social',
+    'Folio',
+    'Fecha Docto',
+    'Fecha Recepcion',
+    'Monto Exento',
+    'Monto Neto',
+    'Monto IVA Recuperable',
+    'Monto Total'
+    
+]
+
+#Filtrar solo esas columnas
+tabla = df[columnas_deseadas]
+
+#Aqui convertimos la tabla en formato HTML, con bordes
+tabla_html = tabla.to_html(index=False, border=2)
+
 #Datos del correo
-remitente = "jperez@novaseguridad.cl"
-destinatario = "destino@gmail.com"
-asunto = "Correo Automatico"
-mensaje = "Prueba de correo automatizado"
+remitente = "micorreo@outlook.cl"
+clave = "******"  # Reemplaza con la clave real o utiliza un metodo seguro para manejar contraseñas
+destinatario = "correodestinatario@.cl"
 
-#Aqui construiremos el mensaje
-#MIMEMultipart() crea un contenedor para el correo
-msg = MIMEMultipart
-
-#Estos tres son los metadatos del correo
+#Crear el mensaje
+msg = MIMEMultipart()
 msg['From'] = remitente
 msg['To'] = destinatario
-msg['Subject'] = asunto
+msg['Subject'] = "Reporte de FCC"
 
-#attach(MIMEText(...)), aqui es donde metemos el cuerpo del mensaje, 'plain' significa que el texto es plano y si quisiera cambiarse a otro tipo, ejemplo HTML, se cambia de 'plain' a 'html'
-msg.attach(MIMEText(mensaje, 'plain'))
+#Cuerpo del correo
 
-#Conexion con el servidor SMTP
-#'smtp.gmail.com', es el servidor de gmail. El puerto 587 es el que se usa para conexiones seguras con TLS
-servidor = smtplib.SMTP('smtp.office365.com', 587)
+cuerpo_html = f"""
+<html>
+  <body>
+    <p>Estimado ,</p>
+    <p> Espero que se encuentre bien,</p>
+    <p>Adjunto el reporte de FCC.</p>,
+    {tabla_html}
+    <p>Saludos cordiales.</p>
+  </body>
+</html>
+"""
 
-#starttls Inicia la conexion segura
-servidor.starttls()
+msg.attach(MIMEText(cuerpo_html, 'html'))
 
-#login(...) es donde autenticas. 
-servidor.login(remitente, 'TU_CLAVE_DE_APLICACION')
+#enviar el correo
 
-#enviar y cerrar
-#sendmail(...), es aqui donde se manda el coreo, msg.as_string() convierte todo el mensaje en texto plano para que el servidor pueda entenderlo
-servidor.sendmail(remitente, destinatario, msg.as_string())
-
-#quit() cierra la conexion con el servidor
-servidor.quit()
-print("Coreo enviado con exito desde Outlook =)")
-
-#esto es por si algo falla, el programa no se caiga, si no que te diga que fue lo que fallo
 try:
-  #codigo
+    servidor = smtplib.SMTP('smtp.office365.com', 587)
+    servidor.starttls()
+    servidor.login(remitente, clave)
+    servidor.sendmail(remitente, destinatario, msg.as_string())
+    servidor.quit()
+    print("Correo enviado exitosamente.")
 except Exception as e:
-  print(f"Error al enviar el correo: {e}")
-
+    print(f"Error al enviar el correo: {e}")
